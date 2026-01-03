@@ -288,8 +288,16 @@ defmodule OpenApiSpex.SchemaResolver do
     end)
   end
 
+  defp resolve_schema_modules_from_schema_properties(properties, schemas)
+       when is_list(properties) do
+    Enum.reduce(properties, {properties, schemas}, fn {name, property}, {properties, schemas} ->
+      {new_property, schemas} = resolve_schema_modules_from_schema(property, schemas)
+      {Keyword.put(properties, name, new_property), schemas}
+    end)
+  end
+
   defp resolve_schema_modules_from_schema_properties(properties, _schemas) do
-    raise "Expected :properties to be a map. Got: #{inspect(properties)}"
+    raise "Expected :properties to be a map or keyword-list. Got: #{inspect(properties)}"
   end
 
   defp resolve_schema_modules_from_discriminator(

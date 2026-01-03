@@ -33,7 +33,8 @@ defmodule OpenApiSpex.Operation do
             deprecated: false,
             security: nil,
             servers: nil,
-            extensions: nil
+            extensions: nil,
+            position: nil
 
   @typedoc """
   [Operation Object](https://swagger.io/specification/#operationObject)
@@ -53,7 +54,8 @@ defmodule OpenApiSpex.Operation do
           deprecated: boolean,
           security: [SecurityRequirement.t()] | nil,
           servers: [Server.t()] | nil,
-          extensions: %{String.t() => any()} | nil
+          extensions: %{String.t() => any()} | nil,
+          position: non_neg_integer | nil
         }
 
   @doc """
@@ -68,20 +70,20 @@ defmodule OpenApiSpex.Operation do
     |> from_route()
   end
 
-  def from_route(%{plug: plug, plug_opts: opts}) do
-    from_plug(plug, opts)
+  def from_route(%{plug: plug, plug_opts: opts, position: position}) do
+    from_plug(plug, opts, position)
   end
 
-  def from_route(%{plug: plug, opts: opts}) do
-    from_plug(plug, opts)
+  def from_route(%{plug: plug, opts: opts, position: position}) do
+    from_plug(plug, opts, position)
   end
 
   @doc """
   Constructs an Operation struct from plug module and opts
   """
-  @spec from_plug(module, opts :: any) :: t | nil
-  def from_plug(plug, opts) do
-    plug.open_api_operation(opts)
+  @spec from_plug(module, opts :: any, non_neg_integer) :: t | nil
+  def from_plug(plug, opts, position) do
+    opts |> plug.open_api_operation() |> Map.put(:position, position)
   end
 
   @doc """

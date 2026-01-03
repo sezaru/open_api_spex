@@ -122,6 +122,7 @@ defmodule OpenApiSpex.OpenApi do
       {:value, v} when object == Example -> {"value", to_map_example(v, opts)}
       {:example, v} -> {"example", to_map_example(v, opts)}
       {:required, []} when object == Schema -> {"required", nil}
+      {:properties, v} when is_list(v) -> {"properties", Jason.OrderedObject.new(to_map(v, opts))}
       {k, v} -> {to_string(k), to_map(v, opts)}
     end)
     |> Stream.filter(fn
@@ -131,6 +132,14 @@ defmodule OpenApiSpex.OpenApi do
       _ -> true
     end)
     |> Enum.into(%{})
+  end
+
+  def to_map(value = %Jason.OrderedObject{}, opts) do
+    %{values: values} = value
+
+    values = Enum.map(values, fn {key, value} -> {key, to_map(value, opts)} end)
+
+    %Jason.OrderedObject{value | values: values}
   end
 
   def to_map(value = %{__struct__: _}, opts) do
@@ -150,7 +159,10 @@ defmodule OpenApiSpex.OpenApi do
   end
 
   def to_map(value, opts) when is_list(value) do
-    Enum.map(value, &to_map(&1, opts))
+    Enum.map(value, fn
+      {k, v} -> {to_string(k), to_map(v, opts)}
+      v -> to_map(v, opts)
+    end)
   end
 
   def to_map(nil, _opts), do: nil

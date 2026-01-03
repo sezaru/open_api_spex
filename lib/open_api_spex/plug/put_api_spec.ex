@@ -45,12 +45,32 @@ defmodule OpenApiSpex.Plug.PutApiSpec do
     if spec_and_lookup do
       spec_and_lookup
     else
-      spec = spec_module.spec()
+      spec = spec_module.spec() |> sort_paths()
       operation_lookup = build_operation_lookup(spec)
       spec_and_lookup = {spec, operation_lookup}
       cache().put(spec_module, spec_and_lookup)
       spec_and_lookup
     end
+  end
+
+  defp sort_paths(%{paths: paths} = api) do
+    paths =
+      paths
+      |> Enum.sort_by(fn {_, operation} ->
+        methods = [:get, :head, :post, :put, :delete, :options, :trace, :patch]
+
+        operation
+        |> Map.take(methods)
+        |> Enum.map(fn
+          {_, nil} -> nil
+          {_, %{position: position}} -> position
+        end)
+        |> Enum.reject(&is_nil/1)
+        |> Enum.min()
+      end)
+      |> Jason.OrderedObject.new()
+
+    Map.put(api, :paths, paths)
   end
 
   @spec get_and_cache_controller_action(Conn.t(), String.t(), {module, atom}) ::

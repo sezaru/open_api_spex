@@ -239,7 +239,10 @@ defmodule OpenApiSpex.Schema do
           anyOf: [Schema.t() | Reference.t() | module] | nil,
           not: Schema.t() | Reference.t() | module | nil,
           items: Schema.t() | Reference.t() | module | nil,
-          properties: %{atom => Schema.t() | Reference.t() | module} | nil,
+          properties:
+            %{atom => Schema.t() | Reference.t() | module}
+            | [{atom, Schema.t() | Reference.t() | module}]
+            | nil,
           additionalProperties: boolean | Schema.t() | Reference.t() | module | nil,
           description: String.t() | nil,
           format: String.t() | atom | nil,
@@ -329,7 +332,8 @@ defmodule OpenApiSpex.Schema do
   Includes all properties directly defined in the schema, and all schemas
   included in the `allOf` list.
   """
-  def properties(schema = %Schema{type: :object, properties: properties = %{}}) do
+  def properties(schema = %Schema{type: :object, properties: properties})
+      when is_list(properties) or is_map(properties) do
     properties
     |> Enum.map(fn {name, property} -> {name, default(property)} end)
     |> Enum.concat(properties(%{schema | properties: nil}))

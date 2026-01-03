@@ -33,7 +33,7 @@ defmodule OpenApiSpex.Cast.Object do
   end
 
   defp resolve_schema_properties_references(%{schema: schema, schemas: schemas} = ctx) do
-    schema_properties = schema.properties || %{}
+    schema_properties = fetch_properties(schema)
 
     resolved_schema_properties =
       Enum.reduce(schema_properties, schema_properties, fn property, properties ->
@@ -55,7 +55,7 @@ defmodule OpenApiSpex.Cast.Object do
   end
 
   defp check_unrecognized_properties(%{value: value, schema: schema} = ctx) do
-    schema_properties = schema.properties || %{}
+    schema_properties = fetch_properties(schema)
     input_keys = value |> Map.keys() |> Enum.map(&to_string/1)
     schema_keys = schema_properties |> Map.keys() |> Enum.map(&to_string/1)
     extra_keys = input_keys -- schema_keys
@@ -146,7 +146,8 @@ defmodule OpenApiSpex.Cast.Object do
 
   defp get_additional_properties(value, ctx) do
     recognized_keys =
-      (ctx.schema.properties || %{})
+      ctx.schema
+      |> fetch_properties()
       |> Map.keys()
       |> Enum.flat_map(&[&1, to_string(&1)])
       |> MapSet.new()
@@ -215,4 +216,8 @@ defmodule OpenApiSpex.Cast.Object do
   end
 
   defp handle_struct_value(ctx), do: ctx
+
+  defp fetch_properties(%{properties: nil}), do: %{}
+  defp fetch_properties(%{properties: properties}) when is_map(properties), do: properties
+  defp fetch_properties(%{properties: properties}) when is_list(properties), do: Map.new(properties)
 end

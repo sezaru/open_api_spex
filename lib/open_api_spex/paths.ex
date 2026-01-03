@@ -36,6 +36,8 @@ defmodule OpenApiSpex.Paths do
   def from_routes(routes) do
     paths =
       routes
+      |> Enum.with_index()
+      |> Enum.map(fn {route, index} -> Map.put(route, :position, index) end)
       |> Enum.group_by(fn route -> route.path end)
       |> Enum.map(fn {k, v} -> {open_api_path(k), PathItem.from_routes(v)} end)
       |> Enum.filter(fn {_k, v} -> !is_nil(v) end)
